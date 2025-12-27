@@ -112,7 +112,6 @@ const AdminBookings = ({ user }) => {
       case 'confirmed': return '#27ae60';
       case 'pending': return '#f39c12';
       case 'cancelled': return '#e74c3c';
-      case 'completed': return '#3498db';
       default: return '#7f8c8d';
     }
   };
@@ -172,7 +171,6 @@ const AdminBookings = ({ user }) => {
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
               <option value="cancelled">Cancelled</option>
-              <option value="completed">Completed</option>
             </select>
           </div>
         </div>
@@ -184,8 +182,8 @@ const AdminBookings = ({ user }) => {
         </div>
       </div>
 
-      {/* Bookings Table */}
-      <div style={styles.tableContainer}>
+      {/* Bookings List */}
+      <div style={styles.bookingsList}>
         {filteredBookings.length === 0 ? (
           <div style={styles.empty}>
             <p>No bookings found matching your criteria.</p>
@@ -199,95 +197,86 @@ const AdminBookings = ({ user }) => {
             )}
           </div>
         ) : (
-          <div style={styles.bookingsGrid}>
-            {filteredBookings.map(booking => (
-              <div key={booking._id} style={styles.bookingCard}>
-                <div style={styles.bookingHeader}>
-                  <div>
-                    <h3 style={styles.bookingId}>
-                      Booking #{booking._id.slice(-6)}
-                    </h3>
-                    <p style={styles.bookingDate}>
-                      Created: {formatDateTime(booking.createdAt)}
-                    </p>
-                  </div>
-                  <div style={styles.statusSection}>
-                    <span style={{
-                      ...styles.statusBadge,
-                      backgroundColor: getStatusColor(booking.status)
-                    }}>
-                      {booking.status.toUpperCase()}
-                    </span>
-                    <select
-                      value={booking.status}
-                      onChange={(e) => handleStatusChange(booking._id, e.target.value)}
-                      style={styles.statusSelect}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="cancelled">Cancelled</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
+          filteredBookings.map(booking => (
+            <div key={booking._id} style={styles.bookingCard}>
+              <div style={styles.bookingHeader}>
+                <div>
+                  <h3 style={styles.bookingId}>
+                    Booking #{booking._id.slice(-6)}
+                  </h3>
+                  <p style={styles.bookingDate}>
+                    Created: {formatDateTime(booking.createdAt)}
+                  </p>
                 </div>
-
-                <div style={styles.bookingBody}>
-                  <div style={styles.bookingRow}>
-                    <div style={styles.infoGroup}>
-                      <h4 style={styles.infoLabel}>Customer</h4>
-                      <p style={styles.infoValue}>{booking.user?.name}</p>
-                      <p style={styles.infoSub}>{booking.user?.email}</p>
-                    </div>
-                    
-                    <div style={styles.infoGroup}>
-                      <h4 style={styles.infoLabel}>Room</h4>
-                      <p style={styles.infoValue}>{booking.room?.name}</p>
-                      <p style={styles.infoSub}>
-                        ${booking.room?.price}/night
-                      </p>
-                    </div>
-                    
-                    <div style={styles.infoGroup}>
-                      <h4 style={styles.infoLabel}>Dates</h4>
-                      <p style={styles.infoValue}>
-                        {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
-                      </p>
-                      <p style={styles.infoSub}>
-                        {calculateNights(booking.checkIn, booking.checkOut)} nights
-                      </p>
-                    </div>
-                    
-                    <div style={styles.infoGroup}>
-                      <h4 style={styles.infoLabel}>Details</h4>
-                      <p style={styles.infoValue}>
-                        {booking.guests} guest{booking.guests !== 1 ? 's' : ''}
-                      </p>
-                      <p style={styles.infoSub}>
-                        Total: <strong style={styles.total}>
-                          ${booking.totalPrice}
-                        </strong>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={styles.bookingActions}>
-                  <button
-                    onClick={() => navigate(`/rooms/${booking.room?._id}`)}
-                    style={styles.viewRoomBtn}
+                <div style={styles.statusSection}>
+                  <span style={{
+                    ...styles.statusBadge,
+                    backgroundColor: getStatusColor(booking.status)
+                  }}>
+                    {booking.status.toUpperCase()}
+                  </span>
+                  <select
+                    value={booking.status}
+                    onChange={(e) => handleStatusChange(booking._id, e.target.value)}
+                    style={styles.statusSelect}
                   >
-                    View Room
-                  </button>
-                  <button
-                    onClick={() => navigate(`/admin/bookings/${booking._id}`)}
-                    style={styles.detailsBtn}
-                  >
-                    View Details
-                  </button>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div style={styles.bookingBody}>
+                <div style={styles.bookingInfo}>
+                  <div style={styles.infoGroup}>
+                    <h4 style={styles.infoLabel}>Customer</h4>
+                    <p style={styles.infoValue}>{booking.user?.name}</p>
+                    <p style={styles.infoSub}>{booking.user?.email}</p>
+                  </div>
+                  
+                  <div style={styles.infoGroup}>
+                    <h4 style={styles.infoLabel}>Room</h4>
+                    <p style={styles.infoValue}>{booking.room?.name}</p>
+                    <p style={styles.infoSub}>
+                      ${booking.room?.price}/night
+                    </p>
+                  </div>
+                  
+                  <div style={styles.infoGroup}>
+                    <h4 style={styles.infoLabel}>Dates</h4>
+                    <p style={styles.infoValue}>
+                      {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
+                    </p>
+                    <p style={styles.infoSub}>
+                      {calculateNights(booking.checkIn, booking.checkOut)} nights
+                    </p>
+                  </div>
+                  
+                  <div style={styles.infoGroup}>
+                    <h4 style={styles.infoLabel}>Details</h4>
+                    <p style={styles.infoValue}>
+                      {booking.guests} guest{booking.guests !== 1 ? 's' : ''}
+                    </p>
+                    <p style={styles.infoSub}>
+                      Total: <strong style={styles.total}>
+                        ${booking.totalPrice}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={styles.bookingActions}>
+                <button
+                  onClick={() => navigate(`/rooms/${booking.room?._id}`)}
+                  style={styles.viewRoomBtn}
+                >
+                  View Room
+                </button>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>
@@ -390,8 +379,10 @@ const styles = {
     fontSize: '0.9rem',
     color: '#7f8c8d',
   },
-  tableContainer: {
-    minHeight: '300px',
+  bookingsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
   },
   empty: {
     textAlign: 'center',
@@ -413,11 +404,6 @@ const styles = {
     ':hover': {
       backgroundColor: '#7f8c8d',
     },
-  },
-  bookingsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(500px, 1fr))',
-    gap: '20px',
   },
   bookingCard: {
     backgroundColor: 'white',
@@ -472,9 +458,9 @@ const styles = {
   bookingBody: {
     padding: '20px',
   },
-  bookingRow: {
+  bookingInfo: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '20px',
   },
   infoGroup: {
@@ -519,19 +505,6 @@ const styles = {
     transition: 'background-color 0.3s',
     ':hover': {
       backgroundColor: '#2980b9',
-    },
-  },
-  detailsBtn: {
-    padding: '8px 16px',
-    backgroundColor: '#95a5a6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '12px',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s',
-    ':hover': {
-      backgroundColor: '#7f8c8d',
     },
   },
 };

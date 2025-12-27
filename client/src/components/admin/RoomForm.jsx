@@ -1,12 +1,137 @@
-  const RoomForm = (props) => {
-    if (fetching) {
-      return (
-        <div style={styles.center}>
-          <div className="spinner"></div>
-          <p>Loading room data...</p>
-        </div>
-      );
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import Alert from '../Alert';
+import { getRoom, createRoom, updateRoom } from '../../utils/api';
+
+const RoomForm = ({ user }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEditMode = !!id;
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    maxGuests: 2,
+    image: 'https://images.unsplash.com/photo-1568495248636-6432b97bd949?w=500&auto=format&fit=crop',
+    amenities: ['WiFi', 'TV', 'AC'],
+    isAvailable: true
+  });
+  
+  const [newAmenity, setNewAmenity] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
+  const [fetching, setFetching] = useState(isEditMode);
+
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/');
+      return;
     }
+
+    if (isEditMode) {
+      fetchRoom();
+    }
+  }, [id, user, navigate, isEditMode]);
+
+  const fetchRoom = async () => {
+    try {
+      setFetching(true);
+      const response = await getRoom(id);
+      const room = response.data;
+      setFormData({
+        name: room.name,
+        description: room.description,
+        price: room.price.toString(),
+        maxGuests: room.maxGuests,
+        image: room.image,
+        amenities: room.amenities || [],
+        isAvailable: room.isAvailable
+      });
+    } catch (error) {
+      console.error('Error fetching room:', error);
+      setAlert({ type: 'error', message: 'Failed to load room data' });
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleAddAmenity = () => {
+    if (newAmenity.trim() && !formData.amenities.includes(newAmenity.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        amenities: [...prev.amenities, newAmenity.trim()]
+      }));
+      setNewAmenity('');
+    }
+  };
+
+  const handleRemoveAmenity = (amenityToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: prev.amenities.filter(amenity => amenity !== amenityToRemove)
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!formData.name || !formData.description || !formData.price) {
+      setAlert({ type: 'error', message: 'Please fill in all required fields' });
+      return;
+    }
+
+    setLoading(true);
+    setAlert(null);
+
+    try {
+      const roomData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        maxGuests: parseInt(formData.maxGuests)
+      };
+
+      if (isEditMode) {
+        await updateRoom(id, roomData);
+        setAlert({ type: 'success', message: 'Room updated successfully!' });
+      } else {
+        await createRoom(roomData);
+        setAlert({ type: 'success', message: 'Room created successfully!' });
+      }
+
+      // Redirect after delay
+      setTimeout(() => {
+        navigate('/admin/rooms');
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error saving room:', error);
+      setAlert({ 
+        type: 'error', 
+        message: error.response?.data?.message || 'Failed to save room' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (fetching) {
+    return (
+      <div style={styles.center}>
+        <div className="spinner"></div>
+        <p>Loading room data...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>

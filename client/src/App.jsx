@@ -8,10 +8,23 @@ import RoomDetail from './pages/RoomDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+
+// Import admin components
 import Dashboard from './pages/admin/Dashboard';
 import AdminRooms from './pages/admin/Rooms';
 import AdminBookings from './pages/admin/Bookings';
 import RoomForm from './components/admin/RoomForm';
+
+// Import other missing pages (if they exist)
+// Make sure these files exist in the correct locations:
+// - client/src/pages/Login.jsx
+// - client/src/pages/Register.jsx
+// - client/src/pages/Profile.jsx
+// - client/src/components/Header.jsx
+// - client/src/components/Footer.jsx
+// - client/src/components/Alert.jsx
+// - client/src/components/RoomCard.jsx
+// - client/src/components/BookingForm.jsx
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -64,7 +77,7 @@ function App() {
               <Route path="/login" element={<Login onLogin={handleLogin} />} />
               <Route path="/register" element={<Register />} />
               
-              {/* Protected Routes */}
+              {/* Protected Routes (User only) */}
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <Profile user={user} />
@@ -101,6 +114,9 @@ function App() {
                   <AdminBookings user={user} />
                 </ProtectedRoute>
               } />
+              
+              {/* Fallback route for 404 */}
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </div>
         </main>
