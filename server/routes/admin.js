@@ -1,3 +1,4 @@
+// server/routes/admin.js
 import express from 'express';
 import User from '../models/User.js';
 import Room from '../models/Room.js';
@@ -5,29 +6,6 @@ import Booking from '../models/Booking.js';
 import { protect, admin } from '../middleware/auth.js';
 
 const router = express.Router();
-
-// Get all users (Admin only)
-router.get('/users', protect, admin, async (req, res) => {
-  try {
-    const users = await User.find({}).select('-password');
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Get all bookings (Admin only)
-router.get('/bookings', protect, admin, async (req, res) => {
-  try {
-    const bookings = await Booking.find({})
-      .populate('user', 'name email')
-      .populate('room')
-      .sort('-createdAt');
-    res.json(bookings);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
 
 // Get admin dashboard stats
 router.get('/stats', protect, admin, async (req, res) => {
@@ -46,56 +24,58 @@ router.get('/stats', protect, admin, async (req, res) => {
       }}
     ]);
 
-    // Get monthly bookings
-    const monthlyBookings = await Booking.aggregate([
-      {
-        $group: {
-          _id: { 
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
-          },
-          count: { $sum: 1 },
-          revenue: { $sum: '$totalPrice' }
-        }
-      },
-      { $sort: { '_id.year': -1, '_id.month': -1 } },
-      { $limit: 6 }
-    ]);
-
-    // Get room occupancy
-    const roomOccupancy = await Booking.aggregate([
-      { $match: { status: 'confirmed' } },
-      {
-        $group: {
-          _id: '$room',
-          bookings: { $sum: 1 },
-          revenue: { $sum: '$totalPrice' }
-        }
-      },
-      { $sort: { bookings: -1 } },
-      { $limit: 5 },
-      {
-        $lookup: {
-          from: 'rooms',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'roomDetails'
-        }
-      }
-    ]);
-
     res.json({
-      totalUsers,
-      totalRooms,
-      totalBookings,
-      totalRevenue: revenueData[0]?.totalRevenue || 0,
-      averageBooking: revenueData[0]?.averageBooking || 0,
-      monthlyBookings,
-      roomOccupancy
+      success: true,
+      data: {
+        totalUsers,
+        totalRooms,
+        totalBookings,
+        totalRevenue: revenueData[0]?.totalRevenue || 0,
+        averageBooking: revenueData[0]?.averageBooking || 0
+      }
     });
   } catch (error) {
     console.error('Stats error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+// Get all users (Admin only)
+router.get('/users', protect, admin, async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password');
+    res.json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+// Get all bookings (Admin only)
+router.get('/bookings', protect, admin, async (req, res) => {
+  try {
+    const bookings = await Booking.find({})
+      .populate('user', 'name email')
+      .populate('room')
+      .sort('-createdAt');
+    
+    res.json({
+      success: true,
+      data: bookings
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 });
 
@@ -106,15 +86,24 @@ router.put('/bookings/:id/status', protect, admin, async (req, res) => {
     const booking = await Booking.findById(req.params.id);
     
     if (!booking) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
     }
 
     booking.status = status;
     await booking.save();
     
-    res.json(booking);
+    res.json({
+      success: true,
+      data: booking
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 

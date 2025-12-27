@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Alert from '../../components/Alert';
 import { getAdminStats } from '../../utils/api';
 
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState(null);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,10 +20,11 @@ const Dashboard = ({ user }) => {
     try {
       setLoading(true);
       const response = await getAdminStats();
+      console.log('Stats response:', response.data);
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
-      setAlert({ type: 'error', message: 'Failed to load dashboard data' });
+      setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -40,8 +40,21 @@ const Dashboard = ({ user }) => {
   if (loading) {
     return (
       <div style={styles.center}>
-        <div className="spinner"></div>
+        <div style={styles.spinner}></div>
         <p>Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={styles.center}>
+        <div style={{...styles.alert, backgroundColor: '#f8d7da', color: '#721c24'}}>
+          {error}
+        </div>
+        <button onClick={fetchStats} style={styles.retryBtn}>
+          Try Again
+        </button>
       </div>
     );
   }
@@ -63,29 +76,15 @@ const Dashboard = ({ user }) => {
           >
             Manage Bookings
           </button>
-          <button 
-            onClick={() => navigate('/rooms')}
-            style={styles.actionBtn}
-          >
-            View as Customer
-          </button>
         </div>
       </div>
-
-      {alert && (
-        <Alert 
-          type={alert.type} 
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
-      )}
 
       {/* Stats Cards */}
       <div style={styles.statsGrid}>
         <div style={styles.statCard}>
           <div style={{...styles.statIcon, backgroundColor: 'rgba(52, 152, 219, 0.1)', color: '#3498db'}}>👥</div>
           <div>
-            <h3 style={styles.statNumber}>{stats?.totalUsers || 0}</h3>
+            <h3 style={styles.statNumber}>{stats?.data?.totalUsers || 0}</h3>
             <p style={styles.statLabel}>Total Users</p>
           </div>
         </div>
@@ -93,7 +92,7 @@ const Dashboard = ({ user }) => {
         <div style={styles.statCard}>
           <div style={{...styles.statIcon, backgroundColor: 'rgba(46, 204, 113, 0.1)', color: '#2ecc71'}}>🏨</div>
           <div>
-            <h3 style={styles.statNumber}>{stats?.totalRooms || 0}</h3>
+            <h3 style={styles.statNumber}>{stats?.data?.totalRooms || 0}</h3>
             <p style={styles.statLabel}>Available Rooms</p>
           </div>
         </div>
@@ -101,7 +100,7 @@ const Dashboard = ({ user }) => {
         <div style={styles.statCard}>
           <div style={{...styles.statIcon, backgroundColor: 'rgba(155, 89, 182, 0.1)', color: '#9b59b6'}}>📅</div>
           <div>
-            <h3 style={styles.statNumber}>{stats?.totalBookings || 0}</h3>
+            <h3 style={styles.statNumber}>{stats?.data?.totalBookings || 0}</h3>
             <p style={styles.statLabel}>Total Bookings</p>
           </div>
         </div>
@@ -109,37 +108,15 @@ const Dashboard = ({ user }) => {
         <div style={styles.statCard}>
           <div style={{...styles.statIcon, backgroundColor: 'rgba(241, 196, 15, 0.1)', color: '#f1c40f'}}>💰</div>
           <div>
-            <h3 style={styles.statNumber}>{formatCurrency(stats?.totalRevenue || 0)}</h3>
+            <h3 style={styles.statNumber}>{formatCurrency(stats?.data?.totalRevenue || 0)}</h3>
             <p style={styles.statLabel}>Total Revenue</p>
           </div>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div style={styles.quickStats}>
-        <div style={styles.quickStatCard}>
-          <h3>Average Booking Value</h3>
-          <p style={styles.quickStatValue}>
-            {formatCurrency(stats?.averageBooking || 0)}
-          </p>
-        </div>
-        <div style={styles.quickStatCard}>
-          <h3>Monthly Bookings</h3>
-          <p style={styles.quickStatValue}>
-            {stats?.monthlyBookings?.[0]?.count || 0}
-          </p>
-        </div>
-        <div style={styles.quickStatCard}>
-          <h3>Most Booked Room</h3>
-          <p style={styles.quickStatValue}>
-            {stats?.roomOccupancy?.[0]?.roomDetails?.[0]?.name || 'N/A'}
-          </p>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div style={styles.recentActivity}>
-        <h2 style={styles.sectionTitle}>Quick Actions</h2>
+      {/* Quick Actions */}
+      <div style={styles.quickActions}>
+        <h3 style={styles.sectionTitle}>Quick Actions</h3>
         <div style={styles.actionsGrid}>
           <button 
             onClick={() => navigate('/admin/rooms/new')}
@@ -162,13 +139,6 @@ const Dashboard = ({ user }) => {
             <span style={styles.actionIcon}>🔄</span>
             <span style={styles.actionText}>Refresh Data</span>
           </button>
-          <button 
-            onClick={() => navigate('/rooms')}
-            style={styles.quickActionBtn}
-          >
-            <span style={styles.actionIcon}>👀</span>
-            <span style={styles.actionText}>View as Customer</span>
-          </button>
         </div>
       </div>
     </div>
@@ -189,6 +159,30 @@ const styles = {
     minHeight: '400px',
     textAlign: 'center',
   },
+  spinner: {
+    border: '4px solid rgba(0, 0, 0, 0.1)',
+    borderRadius: '50%',
+    borderTop: '4px solid #3498db',
+    width: '40px',
+    height: '40px',
+    animation: 'spin 1s linear infinite',
+    margin: '20px auto',
+  },
+  alert: {
+    padding: '15px',
+    borderRadius: '5px',
+    margin: '10px 0',
+  },
+  retryBtn: {
+    padding: '10px 25px',
+    backgroundColor: '#3498db',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '16px',
+    cursor: 'pointer',
+    marginTop: '20px',
+  },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -205,7 +199,6 @@ const styles = {
   headerActions: {
     display: 'flex',
     gap: '10px',
-    flexWrap: 'wrap',
   },
   actionBtn: {
     padding: '10px 20px',
@@ -215,16 +208,12 @@ const styles = {
     borderRadius: '5px',
     fontSize: '14px',
     cursor: 'pointer',
-    transition: 'background-color 0.3s',
-    ':hover': {
-      backgroundColor: '#2980b9',
-    },
   },
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
     gap: '20px',
-    marginBottom: '30px',
+    marginBottom: '40px',
   },
   statCard: {
     backgroundColor: 'white',
@@ -234,10 +223,6 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '20px',
-    transition: 'transform 0.3s',
-    ':hover': {
-      transform: 'translateY(-5px)',
-    },
   },
   statIcon: {
     fontSize: '2.5rem',
@@ -258,25 +243,7 @@ const styles = {
     margin: '0',
     fontSize: '0.9rem',
   },
-  quickStats: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '20px',
-    marginBottom: '40px',
-  },
-  quickStatCard: {
-    backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
-  },
-  quickStatValue: {
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginTop: '10px',
-  },
-  recentActivity: {
+  quickActions: {
     marginTop: '30px',
   },
   sectionTitle: {
@@ -295,15 +262,10 @@ const styles = {
     padding: '25px 20px',
     borderRadius: '10px',
     cursor: 'pointer',
-    transition: 'all 0.3s',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: '15px',
-    ':hover': {
-      backgroundColor: '#3498db',
-      color: 'white',
-    },
   },
   actionIcon: {
     fontSize: '2rem',
@@ -313,5 +275,14 @@ const styles = {
     fontWeight: '500',
   },
 };
+
+// Add CSS animation
+const styleSheet = document.styleSheets[0];
+styleSheet.insertRule(`
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`, styleSheet.cssRules.length);
 
 export default Dashboard;

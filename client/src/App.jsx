@@ -11,7 +11,7 @@ import Profile from './pages/Profile';
 
 // Import admin components
 import Dashboard from './pages/admin/Dashboard';
-import AdminRooms from './pages/admin/Rooms';
+import AdminRooms from '/pages/admin/Rooms'
 import AdminBookings from './pages/admin/Bookings';
 import RoomForm from './components/admin/RoomForm';
 
