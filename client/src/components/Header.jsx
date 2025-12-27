@@ -22,6 +22,9 @@ const Header = ({ user, onLogout }) => {
           
           {user ? (
             <>
+              {user.role === 'admin' && (
+                <Link to="/admin" style={styles.navLink}>Admin</Link>
+              )}
               <Link to="/profile" style={styles.navLink}>Profile</Link>
               <button onClick={handleLogout} style={styles.logoutBtn}>
                 Logout
@@ -39,7 +42,6 @@ const Header = ({ user, onLogout }) => {
     </header>
   );
 };
-
 const styles = {
   header: {
     backgroundColor: '#2c3e50',
